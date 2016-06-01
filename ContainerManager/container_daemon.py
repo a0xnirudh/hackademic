@@ -8,6 +8,7 @@ import signal
 import socket
 import thread
 import random
+import subprocess
 from time import sleep
 from docker import Client
 from docker import utils
@@ -26,6 +27,7 @@ class ContainerDaemon():
         self.HOST = '127.0.0.1'
         self.PORT = 5506
         self.logs = LoggingManager()
+        self.file_location = os.path.abspath(os.path.dirname(__file__))
 
     def create_container(self, challenge=None):
         port = self.generate_port()
@@ -82,14 +84,33 @@ class ContainerDaemon():
             conn, addr = s.accept()
             thread.start_new_thread(self.client_thread, (conn,))
 
+    def custom_build(self, challenge):
+        port = self.generate_port()
+        subprocess.check_call("docker build -t " + challenge + " " +self.file_location + "/challenges/custom/" + challenge,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT, shell=True)
+
+        cli = self.client.create_container(image=challenge,
+                                           ports=[80], host_config=utils.
+                                           create_host_config
+                                           (port_bindings={80: port}),
+                                           detach=True)
+        self.client.start(cli.get("Id"))
+        return "http://localhost:" + str(port) + "/" + str(challenge)
+
     def client_thread(self, conn):
         while True:
             data = conn.recv(1024)
 
             if 'create_container' in str(data):
-                challenge = str(data).split(':')[1]
-                containers = self.create_container(challenge)
-                conn.sendall(containers)
+                if 'custom' in str(data):
+                    challenge = str(data).split(':')[1]
+                    containers = self.custom_build(challenge)
+                    conn.sendall(containers)
+                else:
+                    challenge = str(data).split(':')[1]
+                    containers = self.create_container(challenge)
+                    conn.sendall(containers)
 
             if data == 'list_containers':
                 containers = self.list_containers()
