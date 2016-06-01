@@ -24,7 +24,7 @@ RUN chmod +x phpunit.phar
 
 RUN mv phpunit.phar /usr/local/bin/phpunit
 
-# install RVM, Ruby, and Bundler
+# Install RVM, Ruby, and Bundler
 
 RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 
@@ -35,3 +35,7 @@ RUN /bin/bash -l -c "rvm requirements"
 RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 
 RUN /bin/bash -l -c "gem install rails"
+
+# Install nodejs, npm
+
+RUN apt-get install -y nodejs npm
